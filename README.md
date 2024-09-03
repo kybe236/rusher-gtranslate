@@ -1,4 +1,4 @@
-# Rusherhack Google translates
+# Rusherhack Google translator
 ### Translated receiving / sending messages to an specifig language
 
 ![image](https://github.com/user-attachments/assets/1eb9b9ab-7094-4245-8e1e-3bc8627c3fb0)<br>
