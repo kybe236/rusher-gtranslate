@@ -1,11 +1,9 @@
 package org.kybe;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.game.ServerboundChatPacket;
-import org.apache.logging.log4j.core.jmx.Server;
 import org.rusherhack.client.api.events.client.chat.EventAddChat;
 import org.rusherhack.client.api.events.network.EventPacket;
 import org.rusherhack.client.api.feature.module.ModuleCategory;
@@ -20,10 +18,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -77,11 +74,19 @@ public class GTranslateModule extends ToggleableModule {
 		if (e.getPacket() instanceof ServerboundChatPacket p) {
 			if (!this.translateSending.getValue() || secondcancel) return;
 			try {
-				String text = translate(p.message(), this.sendLang.getValue().name());
 				e.setCancelled(true);
-				secondcancel = true;
-				mc.getConnection().sendChat(text);
-				secondcancel = false;
+				new Thread(() -> {
+					String text = "";
+					try {
+						text = translate(p.message(), sendLang.getValue().name());
+					} catch (Exception ex) {
+						this.getLogger().error(ex.getMessage());
+						this.getLogger().error(ex.getStackTrace().toString());
+					}
+					secondcancel = true;
+					mc.getConnection().sendChat(text);
+					secondcancel = false;
+				}).start();
 			} catch (Exception err) {
 				this.getLogger().error(err.getMessage());
 				this.getLogger().error(err.getStackTrace().toString());
@@ -106,26 +111,28 @@ public class GTranslateModule extends ToggleableModule {
 		String msg = e.getChatComponent().getString();
 		if (msg.isBlank()) return;
 		e.setCancelled(true);
-		try {
-			this.getLogger().debug("translating");
-			String result = translate(e.getChatComponent().getString(), receiveLang.getValue().name());
-			final MutableComponent prefix = Component.literal("[TRANSLATOR]: ").withStyle(ChatFormatting.RED);
-			final MutableComponent text = Component.literal(translate(e.getChatComponent().getString(), this.receiveLang.getValue().name())).withStyle(ChatFormatting.WHITE);
-			if (this.receiveMsg.getValue() == ResponseType.newMsg) {
-				cancel = true;
-				mc.gui.getChat().addMessage(text);
-				cancel = false;
-				mc.gui.getChat().addMessage(Component.empty().append(prefix).append(text));
-			} else if (this.receiveMsg.getValue() == ResponseType.sameMsg) {
-				mc.gui.getChat().addMessage(e.getChatComponent().copy().append(" ").append(prefix).append(text));
-			} else if (this.receiveMsg.getValue() == ResponseType.replaceMsg) {
-				cancel = true;
-				mc.gui.getChat().addMessage(text);
-				cancel = false;
+		new Thread(() -> {
+			try {
+				this.getLogger().debug("translating");
+				String result = translate(e.getChatComponent().getString(), receiveLang.getValue().name());
+				final MutableComponent prefix = Component.literal("[TRANSLATOR]: ").withStyle(ChatFormatting.RED);
+				final MutableComponent text = Component.literal(translate(e.getChatComponent().getString(), this.receiveLang.getValue().name())).withStyle(ChatFormatting.WHITE);
+				if (this.receiveMsg.getValue() == ResponseType.newMsg) {
+					cancel = true;
+					mc.gui.getChat().addMessage(text);
+					cancel = false;
+					mc.gui.getChat().addMessage(Component.empty().append(prefix).append(text));
+				} else if (this.receiveMsg.getValue() == ResponseType.sameMsg) {
+					mc.gui.getChat().addMessage(e.getChatComponent().copy().append(" ").append(prefix).append(text));
+				} else if (this.receiveMsg.getValue() == ResponseType.replaceMsg) {
+					cancel = true;
+					mc.gui.getChat().addMessage(text);
+					cancel = false;
+				}
+			} catch (UnsupportedEncodingException | MalformedURLException ex) {
+				throw new RuntimeException(ex);
 			}
-		} catch (UnsupportedEncodingException | MalformedURLException ex) {
-			throw new RuntimeException(ex);
-		}
+		}).start();
 	}
 
 	public String translate(String inp, String to) throws UnsupportedEncodingException, MalformedURLException {
