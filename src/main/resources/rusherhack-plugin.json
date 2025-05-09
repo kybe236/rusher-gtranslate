@@ -1,12 +1,16 @@
 {
-  "Plugin-Class": "org.kybe.GTranslate",
-  "Name": "GTranslate",
-  "Version": "${plugin_version}",
-  "Description": "Google Translates chat messages",
+  "Plugin-Class": "org.kybe.gtranslatev2.GTranslateV2",
+  "Name": "${project.plugin_name}",
+  "Version": "${project.plugin_version}",
+  "Description": "Translator using Google Translate",
+  "URL": "",
   "Authors": [
     "kybe236"
   ],
   "Minecraft-Versions": [
-    "1.21"
+    "${project.minecraft_version}"
+  ],
+  "Mixin-Configs": [
+    "mixins.gtranslatev2.json"
   ]
 }

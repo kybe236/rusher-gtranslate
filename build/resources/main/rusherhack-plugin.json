@@ -1,0 +1,16 @@
+{
+  "Plugin-Class": "org.kybe.gtranslatev2.GTranslateV2",
+  "Name": "gtranslate-v2",
+  "Version": "1.0.0",
+  "Description": "Translator using Google Translate",
+  "URL": "",
+  "Authors": [
+    "kybe236"
+  ],
+  "Minecraft-Versions": [
+    "1.21.4"
+  ],
+  "Mixin-Configs": [
+    "mixins.gtranslatev2.json"
+  ]
+}
